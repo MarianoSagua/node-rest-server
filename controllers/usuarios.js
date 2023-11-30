@@ -3,24 +3,26 @@ const bcryptjs = require("bcryptjs");
 const Usuario = require("../models/usuario");
 
 const usuariosGet = async (req = request, res = response) => {
-  let { limite, desde = 0 } = req.query;
+  let { limite, desde } = req.query;
   const query = { estado: true };
 
-  limite = !isNaN(Number(limite)) ? Number(limite) : 10;
+  limite = !isNaN(Number(limite))
+    ? Number(limite)
+    : Usuario.countDocuments(query);
   desde = !isNaN(Number(desde)) ? Number(desde) : 0;
 
-  const [total, usuarios] = await Promise.all([
+  const [totalUsuarios, usuariosData] = await Promise.all([
     Usuario.countDocuments(query),
     Usuario.find(query).skip(desde).limit(limite),
   ]);
 
   res.json({
-    total,
-    usuarios,
+    totalUsuarios,
+    usuariosData,
   });
 };
 
-const usuariosPut = async (req, res = response) => {
+const usuariosPut = async (req = request, res = response) => {
   const { id } = req.params;
   const { _id, password, google, correo, ...data } = req.body;
 
@@ -34,7 +36,7 @@ const usuariosPut = async (req, res = response) => {
   res.json(usuario);
 };
 
-const usuariosPost = async (req, res = response) => {
+const usuariosPost = async (req = request, res = response) => {
   const { nombre, correo, password, rol } = req.body;
   const usuario = new Usuario({ nombre, correo, password, rol });
 
@@ -43,18 +45,16 @@ const usuariosPost = async (req, res = response) => {
 
   await usuario.save();
 
-  res.json({
-    usuario,
-  });
+  res.json(usuario);
 };
 
-const usuariosDelete = async (req, res) => {
+const usuariosDelete = async (req = request, res = response) => {
   const { id } = req.params;
 
   const usuario = await Usuario.findByIdAndUpdate(id, { estado: false });
 
   res.json({
-    msg: `El usuario ${id} a sido eliminado correctamente`,
+    msg: `El usuario ${usuario.nombre} a sido eliminado correctamente`,
   });
 };
 
